@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -160,6 +161,124 @@ public class AdminController {
         return "redirect:/admin";
     }
     
+    @PostMapping("/table/{tableName}/delete")
+    public String deleteTableData(@PathVariable String tableName, RedirectAttributes redirectAttributes) {
+        logger.info("Deleting all data from table: {} with active profile: {}", tableName, activeProfile);
+        
+        // Validate table name to prevent SQL injection
+        if (!isValidTableName(tableName)) {
+            logger.warn("Invalid table name attempted in delete operation: {}", tableName);
+            redirectAttributes.addFlashAttribute("error", "Invalid table name");
+            return "redirect:/admin";
+        }
+        
+        try {
+            // Get current row count
+            String countSql = "SELECT COUNT(*) FROM " + tableName;
+            Integer rowCount = jdbcTemplate.queryForObject(countSql, Integer.class);
+            
+            // Execute delete query
+            String deleteSql = "DELETE FROM " + tableName;
+            int deletedRows = jdbcTemplate.update(deleteSql);
+            
+            logger.info("Successfully deleted {} rows from table {}", deletedRows, tableName);
+            redirectAttributes.addFlashAttribute("success", "Successfully deleted " + deletedRows + " rows from table " + tableName);
+            
+            return "redirect:/admin/table/" + tableName;
+        } catch (Exception e) {
+            logger.error("Error deleting data from table {}: {}", tableName, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error deleting data: " + e.getMessage());
+            return "redirect:/admin/table/" + tableName;
+        }
+    }
+    
+    @PostMapping("/table/{tableName}/delete/{id}")
+    public String deleteRowById(@PathVariable String tableName, @PathVariable Long id, RedirectAttributes redirectAttributes) {
+        logger.info("Deleting row with ID {} from table: {}", id, tableName);
+        
+        // Validate table name to prevent SQL injection
+        if (!isValidTableName(tableName)) {
+            logger.warn("Invalid table name attempted in delete row operation: {}", tableName);
+            redirectAttributes.addFlashAttribute("error", "Invalid table name");
+            return "redirect:/admin";
+        }
+        
+        try {
+            // Execute delete query for the specific ID
+            String deleteSql = "DELETE FROM " + tableName + " WHERE id = ?";
+            int deletedRows = jdbcTemplate.update(deleteSql, id);
+            
+            if (deletedRows > 0) {
+                logger.info("Successfully deleted row with ID {} from table {}", id, tableName);
+                redirectAttributes.addFlashAttribute("success", "Successfully deleted row with ID " + id);
+            } else {
+                logger.warn("No rows found with ID {} in table {}", id, tableName);
+                redirectAttributes.addFlashAttribute("warning", "No rows found with ID " + id);
+            }
+            
+            return "redirect:/admin/table/" + tableName;
+        } catch (Exception e) {
+            logger.error("Error deleting row with ID {} from table {}: {}", id, tableName, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error deleting row: " + e.getMessage());
+            return "redirect:/admin/table/" + tableName;
+        }
+    }
+    
+    @PostMapping("/table/{tableName}/delete-by-condition")
+    public String deleteRowsByCondition(
+            @PathVariable String tableName, 
+            @RequestParam String column, 
+            @RequestParam String operator, 
+            @RequestParam String value, 
+            RedirectAttributes redirectAttributes) {
+        
+        logger.info("Deleting rows from table: {} where {} {} {}", tableName, column, operator, value);
+        
+        // Validate table name and column to prevent SQL injection
+        if (!isValidTableName(tableName) || !isValidColumnName(column)) {
+            logger.warn("Invalid table or column name attempted in conditional delete: {}.{}", tableName, column);
+            redirectAttributes.addFlashAttribute("error", "Invalid table or column name");
+            return "redirect:/admin/table/" + tableName;
+        }
+        
+        // Validate operator
+        if (!isValidOperator(operator)) {
+            logger.warn("Invalid operator attempted in conditional delete: {}", operator);
+            redirectAttributes.addFlashAttribute("error", "Invalid operator");
+            return "redirect:/admin/table/" + tableName;
+        }
+        
+        try {
+            // Build condition
+            String condition = column + " " + operator + " ?";
+            
+            // Special case for NULL values
+            if ("IS NULL".equals(operator) || "IS NOT NULL".equals(operator)) {
+                condition = column + " " + operator;
+                // Execute delete query for the condition without parameter
+                String deleteSql = "DELETE FROM " + tableName + " WHERE " + condition;
+                int deletedRows = jdbcTemplate.update(deleteSql);
+                
+                logger.info("Successfully deleted {} rows from table {} where {}", deletedRows, tableName, condition);
+                redirectAttributes.addFlashAttribute("success", "Successfully deleted " + deletedRows + " rows where " + condition);
+            } else {
+                // Execute delete query for the condition with parameter
+                String deleteSql = "DELETE FROM " + tableName + " WHERE " + condition;
+                int deletedRows = jdbcTemplate.update(deleteSql, value);
+                
+                logger.info("Successfully deleted {} rows from table {} where {} {} {}", deletedRows, tableName, column, operator, value);
+                redirectAttributes.addFlashAttribute("success", "Successfully deleted " + deletedRows + " rows where " + 
+                                                   column + " " + operator + " '" + value + "'");
+            }
+            
+            return "redirect:/admin/table/" + tableName;
+        } catch (Exception e) {
+            logger.error("Error deleting rows by condition from table {}: {}", tableName, e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error deleting rows: " + e.getMessage());
+            return "redirect:/admin/table/" + tableName;
+        }
+    }
+    
     private String getTablesQuery() {
         if ("prod".equals(activeProfile)) {
             // MySQL query to get tables
@@ -183,5 +302,24 @@ public class AdminController {
     private boolean isValidTableName(String tableName) {
         // Simple validation to prevent SQL injection
         return tableName.matches("[a-zA-Z0-9_]+");
+    }
+    
+    private boolean isValidColumnName(String columnName) {
+        // Simple validation to prevent SQL injection
+        return columnName.matches("[a-zA-Z0-9_]+");
+    }
+    
+    private boolean isValidOperator(String operator) {
+        // Whitelist of allowed operators
+        final String[] VALID_OPERATORS = {
+            "=", "<>", "!=", ">", "<", ">=", "<=", "LIKE", "NOT LIKE", "IS NULL", "IS NOT NULL"
+        };
+        
+        for (String validOp : VALID_OPERATORS) {
+            if (validOp.equalsIgnoreCase(operator)) {
+                return true;
+            }
+        }
+        return false;
     }
 } 
