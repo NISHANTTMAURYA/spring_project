@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -20,10 +21,15 @@ import jakarta.persistence.Query;
 
 import com.example.demo.entity.Item;
 import com.example.demo.repository.ItemRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.example.demo.config.DataInitializer;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
     
     @Autowired
     private ItemRepository itemRepository;
@@ -34,11 +40,15 @@ public class AdminController {
     @PersistenceContext
     private EntityManager entityManager;
     
+    @Autowired
+    private DataInitializer dataInitializer;
+    
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
     
     @GetMapping
     public String adminHome(Model model) {
+        logger.info("Admin home accessed with active profile: {}", activeProfile);
         model.addAttribute("activeProfile", activeProfile);
         model.addAttribute("items", itemRepository.findAll());
         // Get list of tables
@@ -49,22 +59,61 @@ public class AdminController {
     
     @GetMapping("/table/{tableName}")
     public String viewTable(@PathVariable String tableName, Model model) {
+        logger.info("Viewing table: {} with active profile: {}", tableName, activeProfile);
+        
         // Validate table name to prevent SQL injection
         if (!isValidTableName(tableName)) {
+            logger.warn("Invalid table name attempted: {}", tableName);
             return "redirect:/admin";
         }
         
-        List<String> columns = jdbcTemplate.queryForList(
-                getColumnsQuery(tableName), String.class);
-        
-        // Get table data
-        String sql = "SELECT * FROM " + tableName;
-        List<Map<String, Object>> tableData = jdbcTemplate.queryForList(sql);
-        
-        model.addAttribute("tableName", tableName);
-        model.addAttribute("columns", columns);
-        model.addAttribute("tableData", tableData);
-        return "admin/table";
+        try {
+            // Get table data count
+            String countSql = "SELECT COUNT(*) FROM " + tableName;
+            Integer rowCount = jdbcTemplate.queryForObject(countSql, Integer.class);
+            logger.info("Table {} has {} rows", tableName, rowCount);
+            
+            // Get a sample row first to extract exact column names with proper case
+            String sampleSql = "SELECT * FROM " + tableName + " LIMIT 1";
+            List<Map<String, Object>> sampleData = jdbcTemplate.queryForList(sampleSql);
+            
+            List<String> columns;
+            if (!sampleData.isEmpty()) {
+                // Get column names directly from the result metadata, preserving case
+                columns = new java.util.ArrayList<>(sampleData.get(0).keySet());
+                logger.info("Column names from sample data: {}", columns);
+            } else {
+                // Fallback to schema information
+                columns = jdbcTemplate.queryForList(getColumnsQuery(tableName), String.class);
+                logger.info("Column names from schema: {}", columns);
+            }
+            
+            // Get table data
+            String sql = "SELECT * FROM " + tableName + " LIMIT 100";
+            List<Map<String, Object>> tableData = jdbcTemplate.queryForList(sql);
+            
+            // Log details for debugging
+            logger.info("Retrieved {} rows from table {}", tableData.size(), tableName);
+            if (!tableData.isEmpty()) {
+                Map<String, Object> firstRow = tableData.get(0);
+                logger.info("First row data for table {}:", tableName);
+                for (Map.Entry<String, Object> entry : firstRow.entrySet()) {
+                    logger.info("  {} = {}", entry.getKey(), entry.getValue());
+                }
+            }
+            
+            model.addAttribute("tableName", tableName);
+            model.addAttribute("columns", columns);
+            model.addAttribute("tableData", tableData);
+            model.addAttribute("totalRows", rowCount);
+            model.addAttribute("showingRows", tableData.size());
+            
+            return "admin/table";
+        } catch (Exception e) {
+            logger.error("Error retrieving data from table {}: {}", tableName, e.getMessage(), e);
+            model.addAttribute("error", "Error retrieving data: " + e.getMessage());
+            return "redirect:/admin";
+        }
     }
     
     @GetMapping("/query")
@@ -88,6 +137,27 @@ public class AdminController {
         }
         
         return "admin/query";
+    }
+    
+    @GetMapping("/db-info")
+    public String redirectToDbInfo() {
+        // Redirect to the db-info page
+        return "redirect:/db-info";
+    }
+    
+    @GetMapping("/reinitialize-data")
+    public String reinitializeData(RedirectAttributes redirectAttributes) {
+        try {
+            logger.info("Manual database initialization triggered");
+            // Call data initializer manually
+            String[] args = {};
+            dataInitializer.run(args);
+            redirectAttributes.addFlashAttribute("success", "Database initialization completed successfully");
+        } catch (Exception e) {
+            logger.error("Error during manual database initialization: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to initialize database: " + e.getMessage());
+        }
+        return "redirect:/admin";
     }
     
     private String getTablesQuery() {

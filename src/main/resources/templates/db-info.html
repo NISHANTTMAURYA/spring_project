@@ -18,6 +18,7 @@
                     <li><a href="/">Home</a></li>
                     <li><a href="/items">Items</a></li>
                     <li><a href="/db-info" class="active">Database Info</a></li>
+                    <li><a href="/admin">Admin</a></li>
                     <li><a href="/h2-console" target="_blank" th:if="${#strings.contains(dbInfo.activeProfiles, 'dev')}">H2 Console</a></li>
                 </ul>
             </nav>
@@ -92,6 +93,7 @@
             
             <div class="buttons-container">
                 <a href="/" class="btn">Back to Home</a>
+                <a href="/admin" class="btn">Database Admin</a>
             </div>
         </div>
     </section>

@@ -17,6 +17,19 @@
             Active Profile: <strong th:text="${activeProfile}">dev</strong>
         </div>
         
+        <!-- Success/Error messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${success}">Success message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${error}">Error message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
@@ -59,10 +72,25 @@
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">Execute Custom SQL Query</div>
+                    <div class="card-header">Database Tools & Information</div>
                     <div class="card-body">
-                        <p class="text-muted">Run custom SQL queries (SELECT only for security reasons)</p>
-                        <a href="/admin/query" class="btn btn-primary">SQL Query Tool</a>
+                        <div class="d-flex gap-3">
+                            <div>
+                                <p class="text-muted">Run custom SQL queries (SELECT only for security reasons)</p>
+                                <a href="/admin/query" class="btn btn-primary">SQL Query Tool</a>
+                            </div>
+                            <div class="border-start ps-3">
+                                <p class="text-muted">View detailed database connection information</p>
+                                <a href="/db-info" class="btn btn-info">Database Info</a>
+                            </div>
+                            <div class="border-start ps-3">
+                                <p class="text-muted">Populate database with sample data</p>
+                                <a href="/admin/reinitialize-data" class="btn btn-warning" 
+                                   onclick="return confirm('This will attempt to create sample data in the database. Continue?')">
+                                   Initialize Sample Data
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -34,8 +36,11 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeData() {
-        // Only initialize if no users exist
-        if (!userService.existsByUsername("admin") && !userService.existsByUsername("user")) {
+        boolean hasUsers = userService.existsByUsername("admin") || userService.existsByUsername("user");
+        User user = null;
+        
+        // Create users if they don't exist
+        if (!hasUsers) {
             // Create admin user
             User admin = new User();
             admin.setUsername("admin");
@@ -46,15 +51,31 @@ public class DataInitializer implements CommandLineRunner {
             userService.registerNewUser(admin);
             
             // Create regular user
-            User user = new User();
+            user = new User();
             user.setUsername("user");
             user.setPassword("user123"); // Will be encoded by the userService
             user.setEmail("user@example.com");
             user.setFullName("Regular User");
             userService.registerNewUser(user);
-            
-            // Create some sample todos for the regular user
-            createSampleTodos(user);
+        } else {
+            // Get the existing user
+            Optional<User> existingUser = userService.findByUsername("user");
+            if (existingUser.isPresent()) {
+                user = existingUser.get();
+            } else {
+                // Fallback to admin if user doesn't exist
+                user = userService.findByUsername("admin").orElse(null);
+            }
+        }
+        
+        // Only proceed if we have a valid user
+        if (user != null) {
+            // Check if todos are empty
+            List<Todo> existingTodos = todoService.findAllByUser(user);
+            if (existingTodos.isEmpty()) {
+                // Create sample todos for the user
+                createSampleTodos(user);
+            }
         }
     }
     
