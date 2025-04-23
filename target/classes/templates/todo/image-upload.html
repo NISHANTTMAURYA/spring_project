@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Todos from Image - Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .upload-header {
+            background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .upload-card {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .drag-area {
+            border: 2px dashed #d1d1d1;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drag-area:hover {
+            border-color: #6b73ff;
+            background-color: #f8f9ff;
+        }
+        .drag-area.active {
+            border-color: #0d6efd;
+            background-color: #f0f7ff;
+        }
+        #debug-info {
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content {
+            flex: 1;
+        }
+        footer {
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-check2-square me-2"></i>Todo App
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/todos">My Todos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/todos/extract-from-image">Add from Image</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- Upload Header -->
+        <header class="upload-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1>Extract Todos from Image</h1>
+                        <p class="lead">Use Gemini Vision to convert handwritten or typed notes into digital tasks</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="/todos" class="btn btn-outline-light"><i class="bi bi-arrow-left me-2"></i>Back to Todos</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Upload Content -->
+        <div class="container mb-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="upload-card card border-0">
+                        <div class="card-body p-4">
+                            <!-- Alert Messages -->
+                            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <span th:text="${success}">Success message</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            
+                            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <span th:text="${error}">Error message</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            
+                            <!-- Upload Instructions -->
+                            <div class="mb-4">
+                                <h5><i class="bi bi-info-circle-fill text-primary me-2"></i>How it works:</h5>
+                                <ol>
+                                    <li>Take a photo of your handwritten or typed todo list</li>
+                                    <li>Upload the image using the form below</li>
+                                    <li>Gemini AI will analyze the image and extract tasks</li>
+                                    <li>Extracted tasks will be added to your todo list</li>
+                                </ol>
+                            </div>
+                            
+                            <!-- Upload Form -->
+                            <form th:action="@{/todos/extract-from-image}" method="post" enctype="multipart/form-data" id="uploadForm">
+                                <div class="mb-4">
+                                    <label class="form-label">Upload Todo Image</label>
+                                    <div class="drag-area" id="dragArea">
+                                        <div class="icon"><i class="bi bi-cloud-arrow-up" style="font-size: 48px;"></i></div>
+                                        <p>Drag & Drop your todo list image here or click to browse</p>
+                                        <input type="file" name="image" id="fileInput" class="d-none" accept="image/*" required>
+                                    </div>
+                                    <div id="imagePreviewContainer" class="text-center d-none">
+                                        <img src="" id="imagePreview" class="image-preview mt-3">
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-magic me-2"></i>Extract Todos
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- API Debugging Section -->
+                    <div class="card mt-4 mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#debugInfo">
+                                    <i class="bi bi-bug-fill me-2"></i>Gemini API Configuration
+                                </button>
+                            </h5>
+                        </div>
+                        <div class="collapse" id="debugInfo">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6>Current Configuration:</h6>
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>API Enabled:</span>
+                                            <span th:text="${@environment.getProperty('google.ai.enabled')}">Unknown</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Model URL:</span>
+                                            <span th:text="${@environment.getProperty('google.ai.gemini-url')}">Unknown</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>API Key Status:</span>
+                                            <span th:text="${@environment.getProperty('google.ai.api-key') == null || @environment.getProperty('google.ai.api-key').isEmpty() || @environment.getProperty('google.ai.api-key').equals('YOUR_API_KEY') ? 'Not Configured' : 'Configured'}">Unknown</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h6>Troubleshooting Tips:</h6>
+                                    <ol>
+                                        <li>Ensure you have a valid Gemini API key configured in application.properties</li>
+                                        <li>Check if the Gemini service is enabled (google.ai.enabled=true)</li>
+                                        <li>Verify the correct model URL is being used</li>
+                                        <li>Try using a clear, well-lit image of your todo list</li>
+                                        <li>Images should be in a supported format (JPEG, PNG) and less than 10MB</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Todo App with Gemini Vision</h5>
+                    <p>A modern task management application with AI capabilities</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2023</span> Todo App. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Drag and drop functionality
+        const dragArea = document.getElementById('dragArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        
+        dragArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        dragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragArea.classList.add('active');
+        });
+        
+        dragArea.addEventListener('dragleave', () => {
+            dragArea.classList.remove('active');
+        });
+        
+        dragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragArea.classList.remove('active');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                fileInput.files = e.dataTransfer.files;
+                showImagePreview(file);
+            }
+        });
+        
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                showImagePreview(file);
+            }
+        });
+        
+        function showImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreviewContainer.classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html> 

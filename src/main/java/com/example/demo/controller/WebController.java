@@ -29,7 +29,7 @@ public class WebController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @GetMapping("/")
+    @GetMapping("/items-home")
     public String homePage(Model model) {
         model.addAttribute("items", itemRepository.findAll());
         return "index";
