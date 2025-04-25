@@ -8,5 +8,8 @@ RUN mvn clean package -DskipTests
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
+COPY fix-jdbc-url.sh /
+RUN chmod +x /fix-jdbc-url.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"] 
+ENTRYPOINT ["/fix-jdbc-url.sh"]
+CMD ["java", "-jar", "app.jar"] 
