@@ -12,6 +12,7 @@
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/entity/User.java
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/service/UserService.java
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/controller/HomeController.java
+/Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/config/WebServerConfig.java
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/repository/UserRepository.java
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/config/DatabaseConfig.java
 /Users/nishantmaurya/Documents/spring_project/src/main/java/com/example/demo/controller/TodoController.java

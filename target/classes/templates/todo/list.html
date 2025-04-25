@@ -67,6 +67,69 @@
             background: linear-gradient(135deg, #20B2AA 0%, #009688 100%);
             border: none;
         }
+        
+        /* Mobile Responsiveness Improvements */
+        @media (max-width: 768px) {
+            .todos-header {
+                padding: 20px 0;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            
+            .todos-header h1 {
+                font-size: 1.8rem;
+                margin-bottom: 10px;
+            }
+            
+            .todos-header .lead {
+                font-size: 1rem;
+            }
+            
+            .action-buttons {
+                margin-top: 15px;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .todo-card {
+                margin-bottom: 15px;
+            }
+            
+            .todo-content {
+                margin-bottom: 10px;
+            }
+            
+            .todo-details {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            
+            .todo-meta {
+                margin-top: 8px;
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .todo-date-priority {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .todo-actions {
+                margin-left: auto;
+            }
+            
+            .search-bar {
+                margin-top: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -103,11 +166,11 @@
         <header class="todos-header">
             <div class="container">
                 <div class="row align-items-center">
-                    <div class="col-md-8">
+                    <div class="col-12 col-md-8 text-center text-md-start">
                         <h1 th:text="${filterTitle ?: 'My Todos'}">My Todos</h1>
                         <p class="lead">Manage your tasks effectively</p>
                     </div>
-                    <div class="col-md-4 text-end">
+                    <div class="col-12 col-md-4 text-center text-md-end action-buttons">
                         <a href="/todos/create" class="btn btn-light me-2"><i class="bi bi-plus-circle me-2"></i>New Todo</a>
                         <div class="dropdown d-inline-block">
                             <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -123,10 +186,10 @@
                     </div>
                 </div>
                 <!-- Search Bar -->
-                <div class="row mt-4">
-                    <div class="col-md-6 mx-auto">
+                <div class="row mt-3">
+                    <div class="col-12 col-md-8 col-lg-6 mx-auto search-bar">
                         <form th:action="@{/todos/search}" method="get" class="d-flex">
-                            <input type="text" name="keyword" class="form-control form-control-lg" placeholder="Search todos..." required>
+                            <input type="text" name="keyword" class="form-control" placeholder="Search todos..." required>
                             <button type="submit" class="btn btn-light ms-2"><i class="bi bi-search"></i></button>
                         </form>
                     </div>
@@ -165,9 +228,9 @@
                 <div class="col-md-12">
                     <div th:each="todo : ${todos}" th:class="'todo-card card ' + ${todo.priority.toString().toLowerCase()} + (${todo.completed} ? ' completed' : '')">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <input type="checkbox" class="todo-checkbox me-3" 
+                            <div class="d-flex flex-column flex-md-row justify-content-between todo-details">
+                                <div class="d-flex align-items-start align-items-md-center todo-content">
+                                    <input type="checkbox" class="todo-checkbox me-3 mt-1" 
                                            th:checked="${todo.completed}" 
                                            th:data-id="${todo.id}"
                                            onclick="toggleTodoStatus(this)">
@@ -176,23 +239,23 @@
                                         <p th:if="${todo.description}" class="text-muted mb-0" th:text="${todo.description}">Description</p>
                                     </div>
                                 </div>
-                                <div>
-                                    <div class="d-flex align-items-center">
-                                        <span th:if="${todo.dueDate}" class="me-3">
+                                <div class="todo-meta">
+                                    <div class="todo-date-priority">
+                                        <span th:if="${todo.dueDate}" class="me-2">
                                             <i class="bi bi-calendar-event text-muted me-1"></i>
                                             <span th:text="${#temporals.format(todo.dueDate, 'MMM dd, yyyy')}">Jan 1, 2023</span>
                                         </span>
-                                        <span class="badge me-3" th:classappend="${todo.priority.toString() == 'HIGH' ? 'bg-danger' : (todo.priority.toString() == 'MEDIUM' ? 'bg-warning text-dark' : 'bg-info text-dark')}" 
+                                        <span class="badge" th:classappend="${todo.priority.toString() == 'HIGH' ? 'bg-danger' : (todo.priority.toString() == 'MEDIUM' ? 'bg-warning text-dark' : 'bg-info text-dark')}" 
                                               th:text="${todo.priority}">Priority</span>
-                                        <div class="todo-actions">
-                                            <a th:href="@{/todos/edit/{id}(id=${todo.id})}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a th:href="@{/todos/delete/{id}(id=${todo.id})}" class="btn btn-sm btn-outline-danger" 
-                                               onclick="return confirm('Are you sure you want to delete this todo?')">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                        </div>
+                                    </div>
+                                    <div class="todo-actions">
+                                        <a th:href="@{/todos/edit/{id}(id=${todo.id})}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a th:href="@{/todos/delete/{id}(id=${todo.id})}" class="btn btn-sm btn-outline-danger" 
+                                           onclick="return confirm('Are you sure you want to delete this todo?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -212,7 +275,7 @@
                     <p>A modern task management application with AI capabilities</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p>&copy; 2023 Todo App. All rights reserved.</p>
+                    <p>&copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2023</span> Todo App. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -248,24 +311,19 @@
             })
             .then(success => {
                 if (success) {
-                    // Toggle the completed class on the parent card
-                    const card = checkbox.closest('.todo-card');
+                    const todoCard = checkbox.closest('.todo-card');
                     if (checkbox.checked) {
-                        card.classList.add('completed');
+                        todoCard.classList.add('completed');
                     } else {
-                        card.classList.remove('completed');
+                        todoCard.classList.remove('completed');
                     }
-                } else {
-                    console.error('Failed to update todo status');
-                    // Revert the checkbox state
-                    checkbox.checked = !checkbox.checked;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Revert the checkbox state
+                alert('There was a problem updating the todo status');
+                // Reset checkbox to original state
                 checkbox.checked = !checkbox.checked;
-                alert('Could not update todo status. Please try again.');
             });
         }
     </script>
