@@ -48,6 +48,42 @@
         .hero-buttons {
             margin-top: 2rem;
         }
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 150px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+            color: white;
+        }
+        .stat-card .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
         .hero-buttons .btn {
             padding: 15px 40px;
             font-size: 1.1rem;
@@ -117,6 +153,21 @@
             <div class="container">
                 <h1 class="display-4 fw-bold mb-4">Manage Your Tasks with AI</h1>
                 <p class="lead mb-5">A modern todo app with image recognition powered by Google Gemini API</p>
+                
+                <!-- Todo Stats in Hero Section -->
+                <div class="stats-row" sec:authorize="isAuthenticated()">
+                    <div class="stat-card">
+                        <i class="bi bi-hourglass-split stat-icon"></i>
+                        <h3 class="stat-value" th:text="${pendingTodoCount ?: 0}">0</h3>
+                        <p class="stat-label">Pending Tasks</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="bi bi-calendar-day stat-icon"></i>
+                        <h3 class="stat-value" th:text="${todayTodoCount ?: 0}">0</h3>
+                        <p class="stat-label">Today's Tasks</p>
+                    </div>
+                </div>
+
                 <div sec:authorize="!isAuthenticated()">
                     <div class="hero-buttons">
                         <a href="/register" class="btn btn-light">Get Started</a>
@@ -169,7 +220,7 @@
         </section>
 
         <!-- User Stats (if authenticated) -->
-        <section class="py-5 bg-light" sec:authorize="isAuthenticated()">
+        <section class="py-5 bg-light" sec:authorize="isAuthenticated()" style="display: none;">
             <div class="container">
                 <h2 class="text-center mb-5">Your Todo Stats</h2>
                 <div class="row g-4 justify-content-center">
