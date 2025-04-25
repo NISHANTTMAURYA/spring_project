@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: todo-app-with-gemini
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JDBC_DATABASE_URL
+        fromDatabase:
+          name: todo-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: todo-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: todo-db
+          property: password
+      - key: GEMINI_ENABLED
+        value: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: todo-db
+    plan: free
+    databaseName: todo_db
+    ipAllowList: [] 

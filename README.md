@@ -185,4 +185,57 @@ java -jar target/demo-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 
 ## License
 
-This template is available under the [MIT License](LICENSE). 
+This template is available under the [MIT License](LICENSE).
+
+# Todo App with Gemini Vision AI
+
+A Spring Boot application that uses Google's Gemini Vision AI to extract todo items from images.
+
+## Features
+
+- Extract todo items from uploaded images using Google's Gemini Vision AI
+- Manage todo items with CRUD operations
+- PostgreSQL database for data persistence
+- Responsive design
+
+## Deployment on Render
+
+This application is configured for easy deployment on Render.com.
+
+### Prerequisites
+
+1. A Render.com account
+2. Google Gemini API key from https://makersuite.google.com/app/apikey
+
+### Deployment Steps
+
+1. Fork or clone this repository to your GitHub account
+2. Connect your GitHub repository to Render
+3. Create a new Web Service with these settings:
+   - **Build Command:** `./mvnw clean package -DskipTests`
+   - **Start Command:** `java -jar target/*.jar`
+   - Set the following environment variables:
+     - `SPRING_PROFILES_ACTIVE`: prod
+     - `GEMINI_API_KEY`: Your Google Gemini API key
+     - `ADMIN_USERNAME`: Your admin username
+     - `ADMIN_PASSWORD`: Your admin password
+
+Alternatively, you can use the provided `render.yaml` for Blueprint deployment.
+
+## Local Development
+
+1. Clone the repository
+2. Set up a PostgreSQL database
+3. Configure `application-dev.properties` with your database credentials
+4. Run with: `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`
+
+## Environment Variables
+
+- `PORT`: Server port (default: 8080)
+- `JDBC_DATABASE_URL`: PostgreSQL connection URL
+- `DB_USERNAME`: Database username
+- `DB_PASSWORD`: Database password
+- `GEMINI_ENABLED`: Enable/disable Gemini API
+- `GEMINI_API_KEY`: Your Google Gemini API key
+- `ADMIN_USERNAME`: Admin username
+- `ADMIN_PASSWORD`: Admin password 
