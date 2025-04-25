@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
+import jakarta.servlet.http.HttpSession;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Controller
 @RequestMapping("/todos")
@@ -199,14 +202,32 @@ public class TodoController {
     }
     
     @PostMapping("/extract-from-image")
-    public String processImageTodos(@RequestParam("image") MultipartFile imageFile, Principal principal, RedirectAttributes redirectAttributes) {
+    public String processImageTodos(@RequestParam("image") MultipartFile imageFile, 
+                                  Principal principal, 
+                                  RedirectAttributes redirectAttributes,
+                                  HttpSession session) {
         User user = getCurrentUser(principal);
         
         try {
             TodoExtractResponse response = geminiService.extractTodosFromImage(imageFile);
             
             if (response.getTasks() != null && !response.getTasks().isEmpty()) {
-                // Save all extracted todos
+                // Check if any tasks are missing dates
+                boolean needsDateConfirmation = false;
+                for (TodoExtractResponse.TodoTaskDto taskDto : response.getTasks()) {
+                    if (taskDto.getDueDate() == null || taskDto.getDueDate().isEmpty()) {
+                        needsDateConfirmation = true;
+                        break;
+                    }
+                }
+                
+                // Store tasks in session for date confirmation if needed
+                if (needsDateConfirmation) {
+                    session.setAttribute("extractedTasks", response.getTasks());
+                    return "redirect:/todos/confirm-dates";
+                }
+                
+                // If all tasks have dates, save directly
                 for (TodoExtractResponse.TodoTaskDto taskDto : response.getTasks()) {
                     Todo todo = taskDto.toTodoEntity();
                     todo.setUser(user);
@@ -219,6 +240,71 @@ public class TodoController {
             }
         } catch (IOException e) {
             redirectAttributes.addFlashAttribute("error", "Failed to process the image: " + e.getMessage());
+        }
+        
+        return "redirect:/todos";
+    }
+    
+    @GetMapping("/confirm-dates")
+    public String confirmDates(Model model, HttpSession session) {
+        @SuppressWarnings("unchecked")
+        List<TodoExtractResponse.TodoTaskDto> tasks = 
+            (List<TodoExtractResponse.TodoTaskDto>) session.getAttribute("extractedTasks");
+        
+        if (tasks == null || tasks.isEmpty()) {
+            return "redirect:/todos/extract-from-image";
+        }
+        
+        model.addAttribute("tasks", tasks);
+        model.addAttribute("today", LocalDate.now());
+        model.addAttribute("tomorrow", LocalDate.now().plusDays(1));
+        
+        return "todo/confirm-dates";
+    }
+    
+    @PostMapping("/save-with-dates")
+    public String saveWithDates(@RequestParam("taskDates") String taskDatesJson,
+                              Principal principal,
+                              HttpSession session,
+                              RedirectAttributes redirectAttributes) {
+        User user = getCurrentUser(principal);
+        
+        @SuppressWarnings("unchecked")
+        List<TodoExtractResponse.TodoTaskDto> tasks = 
+            (List<TodoExtractResponse.TodoTaskDto>) session.getAttribute("extractedTasks");
+        
+        if (tasks == null || tasks.isEmpty()) {
+            return "redirect:/todos/extract-from-image";
+        }
+        
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Map<String, Object>> taskDates = objectMapper.readValue(taskDatesJson, 
+                new TypeReference<List<Map<String, Object>>>() {});
+            
+            int savedCount = 0;
+            for (Map<String, Object> taskDate : taskDates) {
+                int index = (Integer) taskDate.get("index");
+                String date = (String) taskDate.get("date");
+                
+                if (index < tasks.size()) {
+                    TodoExtractResponse.TodoTaskDto taskDto = tasks.get(index);
+                    Todo todo = taskDto.toTodoEntity();
+                    todo.setDueDate(LocalDate.parse(date));
+                    todo.setUser(user);
+                    todoService.save(todo);
+                    savedCount++;
+                }
+            }
+            
+            // Clear the session
+            session.removeAttribute("extractedTasks");
+            
+            redirectAttributes.addFlashAttribute("success", 
+                "Successfully added " + savedCount + " todos to your list!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Error saving todos: " + e.getMessage());
         }
         
         return "redirect:/todos";

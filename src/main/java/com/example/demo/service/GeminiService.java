@@ -71,10 +71,22 @@ public class GeminiService {
             headers.set("x-goog-api-key", apiKey);
             
             // Create prompt
-            String prompt = "Extract todo tasks from this image. For each task, identify the title, any description, "
-                    + "priority level (if visible), and due date (if visible). Format the response as a JSON array of tasks "
-                    + "with fields: title, description, priority, dueDate. For priority, use values: LOW, MEDIUM, HIGH. "
-                    + "For dueDate, use ISO format (YYYY-MM-DD) or null if not specified.";
+            String prompt = "Extract todo tasks from this image. Your primary objective is to accurately identify all tasks and their details.\n\n"
+                    + "For each task, extract the following information:\n"
+                    + "1. Title (required): The main task description\n"
+                    + "2. Description (optional): Any additional details about the task\n"
+                    + "3. Priority (optional): The importance level of the task\n"
+                    + "4. Due Date (important): When the task should be completed\n\n"
+                    + "IMPORTANT INSTRUCTIONS FOR DATES:\n"
+                    + "- Look carefully for any dates mentioned in the image\n"
+                    + "- Dates might appear as 'due on May 5', 'by tomorrow', 'next Monday', etc.\n"
+                    + "- Convert all date references to ISO format (YYYY-MM-DD)\n"
+                    + "- If a date is mentioned without a year, assume current year\n"
+                    + "- If a relative date is mentioned (tomorrow, next week), calculate the actual date\n"
+                    + "- Today's date is " + LocalDate.now().toString() + "\n\n"
+                    + "Format the response as a JSON array of tasks with fields: title, description, priority, dueDate. "
+                    + "For priority, use values: LOW, MEDIUM, HIGH. "
+                    + "For dueDate, use ISO format (YYYY-MM-DD) or leave empty if no date is specified.";
             
             // Build request body
             Map<String, Object> requestBody = new HashMap<>();

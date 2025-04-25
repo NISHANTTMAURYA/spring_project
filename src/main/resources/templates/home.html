@@ -11,6 +11,9 @@
             background: linear-gradient(135deg, #20B2AA 0%, #009688 100%);
             color: white;
             padding: 80px 0;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
         }
         .feature-box {
             padding: 30px;
@@ -41,6 +44,38 @@
         .btn-primary {
             background: linear-gradient(135deg, #20B2AA 0%, #009688 100%);
             border: none;
+        }
+        .hero-buttons {
+            margin-top: 2rem;
+        }
+        .hero-buttons .btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            min-width: 250px;
+        }
+        .hero-buttons .btn-light {
+            background: white;
+            color: #009688;
+            border: 2px solid white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .hero-buttons .btn-light:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        .hero-buttons .btn-outline-light {
+            border: 2px solid white;
+        }
+        .hero-buttons .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -83,12 +118,16 @@
                 <h1 class="display-4 fw-bold mb-4">Manage Your Tasks with AI</h1>
                 <p class="lead mb-5">A modern todo app with image recognition powered by Google Gemini API</p>
                 <div sec:authorize="!isAuthenticated()">
-                    <a href="/register" class="btn btn-light btn-lg me-2">Get Started</a>
-                    <a href="/login" class="btn btn-outline-light btn-lg">Login</a>
+                    <div class="hero-buttons">
+                        <a href="/register" class="btn btn-light">Get Started</a>
+                        <a href="/login" class="btn btn-outline-light">Login</a>
+                    </div>
                 </div>
                 <div sec:authorize="isAuthenticated()">
-                    <a href="/todos" class="btn btn-light btn-lg me-2">View My Todos</a>
-                    <a href="/todos/extract-from-image" class="btn btn-outline-light btn-lg">Add Todos from Image</a>
+                    <div class="hero-buttons">
+                        <a href="/todos" class="btn btn-light">View My Todos</a>
+                        <a href="/todos/extract-from-image" class="btn btn-outline-light">Add Todos from Image</a>
+                    </div>
                 </div>
             </div>
         </section>

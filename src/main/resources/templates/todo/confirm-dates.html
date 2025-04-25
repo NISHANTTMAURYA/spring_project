@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Todo Dates - Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .header {
+            background: linear-gradient(135deg, #20B2AA 0%, #009688 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .todo-item {
+            border-left: 4px solid #6c757d;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 0 5px 5px 0;
+        }
+        .todo-item.high {
+            border-left-color: #dc3545;
+        }
+        .todo-item.medium {
+            border-left-color: #fd7e14;
+        }
+        .todo-item.low {
+            border-left-color: #009688;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content {
+            flex: 1;
+        }
+        footer {
+            margin-top: auto;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #20B2AA 0%, #009688 100%);
+            border: none;
+        }
+        .option-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .option-card:hover {
+            border-color: #20B2AA;
+            background-color: #f8f9fa;
+        }
+        .option-card.selected {
+            border-color: #009688;
+            background-color: #e8f5f3;
+        }
+        .custom-date {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-check2-square me-2"></i>Todo App
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/todos">My Todos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/todos/extract-from-image">Add from Image</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>Confirm Todo Dates</h1>
+                    <p class="lead">Your tasks have been extracted! When would you like to schedule them?</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="container mb-5">
+            <div class="row">
+                <!-- Extracted Todos Preview -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Extracted Tasks</h5>
+                        </div>
+                        <div class="card-body">
+                            <div th:if="${tasks.empty}" class="alert alert-warning">
+                                No tasks were extracted from the image.
+                            </div>
+                            
+                            <div th:each="task, taskStat : ${tasks}" th:class="'todo-item ' + ${task.priority != null ? task.priority.toLowerCase() : 'medium'}">
+                                <h5 th:text="${task.title}">Task Title</h5>
+                                <p class="mb-1" th:if="${task.description}" th:text="${task.description}">Description</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge" th:if="${task.priority}" 
+                                          th:classappend="${task.priority == 'HIGH' ? 'bg-danger' : (task.priority == 'MEDIUM' ? 'bg-warning text-dark' : 'bg-info text-dark')}" 
+                                          th:text="${task.priority}">Priority</span>
+                                    <div class="date-selection">
+                                        <div class="btn-group" role="group">
+                                            <input type="radio" class="btn-check" th:name="'dateType_' + ${taskStat.index}" th:id="'today_' + ${taskStat.index}" value="today" checked>
+                                            <label class="btn btn-outline-primary btn-sm" th:for="'today_' + ${taskStat.index}">
+                                                Today <span class="text-muted" th:text="'(' + ${#temporals.format(today, 'MMM dd')} + ')'">Jan 1</span>
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" th:name="'dateType_' + ${taskStat.index}" th:id="'tomorrow_' + ${taskStat.index}" value="tomorrow">
+                                            <label class="btn btn-outline-primary btn-sm" th:for="'tomorrow_' + ${taskStat.index}">
+                                                Tomorrow <span class="text-muted" th:text="'(' + ${#temporals.format(tomorrow, 'MMM dd')} + ')'">Jan 2</span>
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" th:name="'dateType_' + ${taskStat.index}" th:id="'custom_' + ${taskStat.index}" value="custom">
+                                            <label class="btn btn-outline-primary btn-sm" th:for="'custom_' + ${taskStat.index}">Custom Date</label>
+                                        </div>
+                                        <input type="date" th:id="'customDate_' + ${taskStat.index}" class="form-control form-control-sm mt-2 custom-date-input" style="display: none;">
+                                        <input type="hidden" th:name="'taskDate_' + ${taskStat.index}" th:id="'taskDate_' + ${taskStat.index}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Date Selection -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="bi bi-calendar-date me-2"></i>Choose Due Date</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">
+                                Choose when you'd like to schedule these tasks. Tasks that already have a due date will keep their original dates.
+                            </p>
+                            
+                            <form action="/todos/save-with-dates" method="post" id="dateForm">
+                                <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
+                                <input type="hidden" name="taskDates" id="taskDatesJson" />
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-check-lg me-2"></i>Confirm and Save Tasks
+                                    </button>
+                                    <a href="/todos/extract-from-image" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-2"></i>Go Back
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Todo App with Gemini Vision</h5>
+                    <p>A modern task management application with AI capabilities</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2023</span> Todo App. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateForm = document.getElementById('dateForm');
+            const taskDatesJson = document.getElementById('taskDatesJson');
+            
+            // Initialize date inputs with today's date
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            // Set up event listeners for each task's date selection
+            document.querySelectorAll('[id^="customDate_"]').forEach(input => {
+                input.value = formatDate(today);
+            });
+
+            // Handle radio button changes
+            document.querySelectorAll('[name^="dateType_"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const index = this.name.split('_')[1];
+                    const customDateInput = document.getElementById(`customDate_${index}`);
+                    const taskDateInput = document.getElementById(`taskDate_${index}`);
+                    
+                    if (this.value === 'custom') {
+                        customDateInput.style.display = 'block';
+                        taskDateInput.value = customDateInput.value;
+                    } else {
+                        customDateInput.style.display = 'none';
+                        taskDateInput.value = this.value === 'today' ? formatDate(today) : formatDate(tomorrow);
+                    }
+                });
+            });
+
+            // Handle custom date input changes
+            document.querySelectorAll('[id^="customDate_"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    const index = this.id.split('_')[1];
+                    const taskDateInput = document.getElementById(`taskDate_${index}`);
+                    taskDateInput.value = this.value;
+                });
+            });
+
+            // Initialize all task dates with today's date
+            document.querySelectorAll('[id^="taskDate_"]').forEach(input => {
+                input.value = formatDate(today);
+            });
+
+            // Handle form submission
+            dateForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const taskDates = [];
+                document.querySelectorAll('[id^="taskDate_"]').forEach((input, index) => {
+                    taskDates.push({
+                        index: index,
+                        date: input.value
+                    });
+                });
+                
+                taskDatesJson.value = JSON.stringify(taskDates);
+                this.submit();
+            });
+        });
+    </script>
+</body>
+</html> 

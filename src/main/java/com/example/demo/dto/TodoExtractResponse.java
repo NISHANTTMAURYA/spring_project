@@ -85,10 +85,12 @@ public class TodoExtractResponse {
                 try {
                     todo.setDueDate(LocalDate.parse(dueDate));
                 } catch (Exception e) {
-                    // Default to today if invalid date
-                    todo.setDueDate(LocalDate.now());
+                    // Log the error but don't set a default date
+                    // This will allow the user to choose a date later
+                    System.err.println("Error parsing date: " + dueDate + ", " + e.getMessage());
                 }
             }
+            // No default date is set if none was provided
             
             return todo;
         }
