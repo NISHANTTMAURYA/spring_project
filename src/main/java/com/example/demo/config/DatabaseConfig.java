@@ -18,7 +18,7 @@ public class DatabaseConfig {
     private Environment env;
 
     /**
-     * MySQL database initializer for production profile
+     * PostgreSQL database initializer for production profile
      */
     @Bean
     @Profile("prod")
@@ -35,8 +35,8 @@ public class DatabaseConfig {
         initializer.setDataSource(dataSource);
         
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-        populator.addScript(new ClassPathResource("schema-mysql.sql"));
-        populator.addScript(new ClassPathResource("data-mysql.sql"));
+        populator.addScript(new ClassPathResource("schema-postgresql.sql"));
+        populator.addScript(new ClassPathResource("data-postgresql.sql"));
         populator.setSeparator(";");
         initializer.setDatabasePopulator(populator);
         

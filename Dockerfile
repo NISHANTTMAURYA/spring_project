@@ -15,4 +15,4 @@ RUN chmod +x /fix-jdbc-url.sh /keep-alive.sh /db-init.sh
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 EXPOSE 8080
 ENTRYPOINT ["/keep-alive.sh", "/fix-jdbc-url.sh", "/db-init.sh"]
-CMD ["java", "-Dspring.profiles.active=prod", "-Dserver.port=${PORT:8080}", "-jar", "app.jar"] 
+CMD ["sh", "-c", "echo \"PORT=${PORT}\" && java -Dspring.profiles.active=prod -Dserver.port=${PORT:8080} -jar app.jar"] 
