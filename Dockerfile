@@ -11,8 +11,9 @@ COPY --from=build /app/target/*.jar app.jar
 COPY fix-jdbc-url.sh /
 COPY keep-alive.sh /
 COPY db-init.sh /
-RUN chmod +x /fix-jdbc-url.sh /keep-alive.sh /db-init.sh
+COPY start.sh /app/
+RUN chmod +x /fix-jdbc-url.sh /keep-alive.sh /db-init.sh /app/start.sh
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 EXPOSE 8080
 ENTRYPOINT ["/keep-alive.sh", "/fix-jdbc-url.sh", "/db-init.sh"]
-CMD ["sh", "-c", "echo \"PORT=${PORT}\" && java -Dspring.profiles.active=prod -Dserver.port=${PORT:8080} -jar app.jar"] 
+CMD ["/app/start.sh"] 
