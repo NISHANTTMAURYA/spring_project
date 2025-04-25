@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # URL to ping
-URL="https://todo-app-with-gemini.onrender.com"
+URL="https://todo-ai-ikh3.onrender.com"
 
 # Log file
 LOG_FILE="/app/ping-logs.txt"
