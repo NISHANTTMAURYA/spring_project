@@ -9,7 +9,10 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 COPY fix-jdbc-url.sh /
-RUN chmod +x /fix-jdbc-url.sh
+COPY keep-alive.sh /
+COPY db-init.sh /
+RUN chmod +x /fix-jdbc-url.sh /keep-alive.sh /db-init.sh
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 EXPOSE 8080
-ENTRYPOINT ["/fix-jdbc-url.sh"]
+ENTRYPOINT ["/keep-alive.sh", "/fix-jdbc-url.sh", "/db-init.sh"]
 CMD ["java", "-jar", "app.jar"] 
