@@ -22,7 +22,7 @@ public class DatabaseConfig {
      */
     @Bean
     @Profile("prod")
-    public DataSourceInitializer mysqlDataSourceInitializer(DataSource dataSource) {
+    public DataSourceInitializer prodDataSourceInitializer(DataSource dataSource) {
         // Only initialize if explicitly enabled in properties
         String initDatabase = env.getProperty("app.init-db", "false");
         
@@ -37,6 +37,32 @@ public class DatabaseConfig {
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("schema-mysql.sql"));
         populator.addScript(new ClassPathResource("data-mysql.sql"));
+        populator.setSeparator(";");
+        initializer.setDatabasePopulator(populator);
+        
+        return initializer;
+    }
+    
+    /**
+     * PostgreSQL database initializer for development profile
+     */
+    @Bean
+    @Profile("dev")
+    public DataSourceInitializer devDataSourceInitializer(DataSource dataSource) {
+        // Only initialize if explicitly enabled in properties
+        String initDatabase = env.getProperty("app.init-db", "false");
+        
+        if (!Boolean.parseBoolean(initDatabase)) {
+            // Skip initialization
+            return null;
+        }
+        
+        DataSourceInitializer initializer = new DataSourceInitializer();
+        initializer.setDataSource(dataSource);
+        
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(new ClassPathResource("schema-postgresql.sql"));
+        populator.addScript(new ClassPathResource("data-postgresql.sql"));
         populator.setSeparator(";");
         initializer.setDatabasePopulator(populator);
         
