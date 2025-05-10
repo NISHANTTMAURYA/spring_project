@@ -80,7 +80,7 @@ public class GeminiService {
                 .append("1. Title (required): The main task description\n")
                 .append("2. Description (optional): Any additional details about the task\n")
                 .append("3. Priority (optional): The importance level of the task\n")
-                .append("4. Due Date (optional): When the task should be completed\n\n")
+                .append("4. Due Date (important): When the task should be completed\n\n")
                 .append("IMPORTANT INSTRUCTIONS FOR DATES:\n")
                 .append("- Extract dates ONLY if explicitly mentioned in the image\n")
                 .append("- Do NOT assign or generate dates if they are not present in the image\n")
