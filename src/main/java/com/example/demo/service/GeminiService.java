@@ -45,7 +45,7 @@ public class GeminiService {
     /**
      * Extract todos from an image using Gemini API
      */
-    public TodoExtractResponse extractTodosFromImage(MultipartFile imageFile) throws IOException {
+    public TodoExtractResponse extractTodosFromImage(MultipartFile imageFile, String userContext) throws IOException {
         // Check if Gemini API is enabled
         if (!enabled || apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY")) {
             logger.warn("Gemini API is disabled or API key is not configured. Using fallback method.");
@@ -71,22 +71,27 @@ public class GeminiService {
             headers.set("x-goog-api-key", apiKey);
             
             // Create prompt
-            String prompt = "First read all the data in the image and then extract todo tasks from this image. Your primary objective is to accurately identify all tasks and their details.\n\n"
-                    + "For each task, extract the following information:\n"
-                    + "1. Title (required): The main task description\n"
-                    + "2. Description (optional): Any additional details about the task\n"
-                    + "3. Priority (optional): The importance level of the task\n"
-                    + "4. Due Date (optional): When the task should be completed\n\n"
-                    + "IMPORTANT INSTRUCTIONS FOR DATES:\n"
-                    + "- Extract dates ONLY if explicitly mentioned in the image\n"
-                    + "- Do NOT assign or generate dates if they are not present in the image\n"
-                    + "- If a date is mentioned, convert it to ISO format (YYYY-MM-DD)\n"
-                    + "- If a date is mentioned without a year, assume current year\n"
-                    + "- If a relative date is mentioned (tomorrow, next week), calculate the actual date\n"
-                    + "- Today's date is " + LocalDate.now().toString() + "\n\n"
-                    + "Format the response as a JSON array of tasks with fields: title, description, priority, dueDate. "
-                    + "For priority, use values: LOW, MEDIUM, HIGH. "
-                    + "For dueDate, use ISO format (YYYY-MM-DD) or leave it as an empty string if no date is specified in the image.";
+            StringBuilder promptBuilder = new StringBuilder();
+            if (userContext != null && !userContext.trim().isEmpty()) {
+                promptBuilder.append("User instructions: ").append(userContext.trim()).append("\n\n");
+            }
+            promptBuilder.append("First read all the data in the image and then extract todo tasks from this image. Your primary objective is to accurately identify all tasks and their details.\n\n")
+                .append("For each task, extract the following information:\n")
+                .append("1. Title (required): The main task description\n")
+                .append("2. Description (optional): Any additional details about the task\n")
+                .append("3. Priority (optional): The importance level of the task\n")
+                .append("4. Due Date (optional): When the task should be completed\n\n")
+                .append("IMPORTANT INSTRUCTIONS FOR DATES:\n")
+                .append("- Extract dates ONLY if explicitly mentioned in the image\n")
+                .append("- Do NOT assign or generate dates if they are not present in the image\n")
+                .append("- If a date is mentioned, convert it to ISO format (YYYY-MM-DD)\n")
+                .append("- If a date is mentioned without a year, assume current year\n")
+                .append("- If a relative date is mentioned (tomorrow, next week), calculate the actual date\n")
+                .append("- Today's date is ").append(LocalDate.now().toString()).append("\n\n")
+                .append("Format the response as a JSON array of tasks with fields: title, description, priority, dueDate. ")
+                .append("For priority, use values: LOW, MEDIUM, HIGH. ")
+                .append("For dueDate, use ISO format (YYYY-MM-DD) or leave it as an empty string if no date is specified in the image.");
+            String prompt = promptBuilder.toString();
             
             // Build request body
             Map<String, Object> requestBody = new HashMap<>();

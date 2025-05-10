@@ -203,13 +203,14 @@ public class TodoController {
     
     @PostMapping("/extract-from-image")
     public String processImageTodos(@RequestParam("image") MultipartFile imageFile, 
+                                  @RequestParam(value = "userContext", required = false) String userContext,
                                   Principal principal, 
                                   RedirectAttributes redirectAttributes,
                                   HttpSession session) {
         User user = getCurrentUser(principal);
         
         try {
-            TodoExtractResponse response = geminiService.extractTodosFromImage(imageFile);
+            TodoExtractResponse response = geminiService.extractTodosFromImage(imageFile, userContext);
             
             if (response.getTasks() != null && !response.getTasks().isEmpty()) {
                 // Check if any tasks are missing dates
